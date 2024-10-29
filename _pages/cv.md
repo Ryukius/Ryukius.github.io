@@ -12,7 +12,7 @@ redirect_from:
 Contact Information
 ======
 * Email: rkobayashi@keio.jp
-* Adress: Faculty of Economics, Keio University, 2-15-45 Mita, Minato-ku, Tokyo 108-8345, JAPAN
+* Address: Faculty of Economics, Keio University, 2-15-45 Mita, Minato-ku, Tokyo 108-8345, JAPAN
 
 Current Position
 ======
