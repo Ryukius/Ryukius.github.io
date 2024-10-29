@@ -16,5 +16,5 @@ I am Ryuki Kobayashi (**小林 流基**), a Research Associate at the Faculty of
 * Applied microeconomics
 
 ## Contact information
-Email: rkobayashi@keio.jp
-Adress: 2-15-45 Mita, Minato-ku, Tokyo 108-8345, JAPAN
+* Email: rkobayashi@keio.jp
+* Adress: 2-15-45 Mita, Minato-ku, Tokyo 108-8345, JAPAN
