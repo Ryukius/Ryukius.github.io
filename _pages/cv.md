@@ -36,7 +36,7 @@ Education
 
 Publications and Woking Papers
 ======
-Please see **[Research](https://ryukius.github.io/publications/)**
+Please see **[Research](https://ryukius.github.io/research/)**
 
 
 Teaching Experience
