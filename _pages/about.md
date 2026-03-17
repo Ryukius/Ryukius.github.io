@@ -7,7 +7,7 @@ redirect_from:
   - /about.html
 ---
 
-I am Ryuki Kobayashi (**小林 流基**), a Research Associate at the Faculty of Economics, Keio University.
+I am Ryuki Kobayashi (**小林 流基**), a Research Associate at [the Faculty of Economics, Keio University](https://www.econ.keio.ac.jp).
 
 慶應義塾大学経済学部 助教（有期）
 
