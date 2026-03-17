@@ -19,22 +19,24 @@ Current Position
 * Research Associate, Faculty of Economics, Keio University, April 2023 - present.
 
 
-Previous Employment / positions
+Previous Employment/Positions
 ======
 * JSPS Research Fellowship for Young Scientists, DC2, Japan Society for the Promotion of Science, Japan. April 2021 - March 2023
 * Adjunct Researcher, Faculty of Economics, Keio University, April 2020 - March 2023
 
 Other Positions
 =====
+* Part-time Lecturer, Graduate School of Business & Finance, Waseda University. September 2025 - March 2026
 * Part-time Lecturer, Graduate School of Business & Finance, Waseda University. April 2023 - September 2023
 * Part-time Lecturer, Faculty of Commerce, Otaru University of Commerce. April 2023 - September 2023
 
 Education
 ======
-* M.A. in Economics, Keio University, 2020 (Advisor: [Ryo Nakajima](https://web.econ.keio.ac.jp/staff/nakajima/RYO_NAKAJIMA_Official_Site,_Main.html))
+* Ph.D. in Economics, Keio University, 2026 (Advisor: [Ryo Nakajima](https://web.econ.keio.ac.jp/staff/nakajima/RYO_NAKAJIMA_Official_Site,_Main.html))
+* M.A. in Economics, Keio University, 2020
 * B.A. in Economics, Keio University, 2015
 
-Publications and Woking Papers
+Publications and Working Papers
 ======
 Please see **[Research](https://ryukius.github.io/research/)**
 
