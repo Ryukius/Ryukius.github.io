@@ -19,6 +19,8 @@ author_profile: true
 - メール: ryuki_kobayashi [at] aoni.waseda.jp
 - 住所: 〒169-8050 東京都新宿区西早稲田1-6-1 早稲田大学商学部
 
+---
+
 # CV
 
 ## 学位
@@ -51,4 +53,4 @@ author_profile: true
 
 ## 教育経験
 
-英語版Webページ（**[Research](/research/)**）をご覧ください。
+英語版Webページ（**[Teaching](/Teaching/)**）をご覧ください。
