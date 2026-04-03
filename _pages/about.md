@@ -1,13 +1,13 @@
 ---
 permalink: /
-title: "Ryuki Kobayashi's website"
+title: "KOBAYASHI Ryuki's website"
 author_profile: true
 redirect_from: 
   - /about/
   - /about.html
 ---
 
-I am Ryuki Kobayashi (**小林 流基**), a Assistant Professor at [the School of Commerce, Waseda University](https://www.waseda.jp/fcom/soc/).
+I am KOBAYASHI Ryuki (**小林 流基**), an Assistant Professor at [the School of Commerce, Waseda University](https://www.waseda.jp/fcom/soc/).
 
 早稲田大学商学部 講師（任期付）
 
