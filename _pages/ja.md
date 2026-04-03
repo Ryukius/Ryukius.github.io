@@ -1,6 +1,6 @@
 ---
 permalink: /ja/
-title: "小林 流基（ウェブサイト）"
+title: "小林 流基のホームページ"
 lang: ja
 author_profile: true
 ---
