@@ -1,9 +1,9 @@
 ---
-title: "Industrial Organization (2024 Fall)"
+title: "産業組織論（2024年秋学期）"
 collection: teaching
-type: "Graduate course"
+type: "大学院科目"
 permalink: /teaching/2024-fall-keio-grad-io
-venue: "Keio University, Graduate School of Economics, Fall Semester"
+venue: "慶應義塾大学経済学研究科（秋学期）"
 date: 2024-10-01
-location: "Tokyo, Japan"
+location: "東京都"
 ---

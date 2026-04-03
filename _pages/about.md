@@ -7,14 +7,14 @@ redirect_from:
   - /about.html
 ---
 
-I am Ryuki Kobayashi (**小林 流基**), a Research Associate at [the Faculty of Economics, Keio University](https://www.econ.keio.ac.jp).
+I am Ryuki Kobayashi (**小林 流基**), a Assistant Professor at [the School of Commerce, Waseda University](https://www.waseda.jp/fcom/soc/).
 
-慶應義塾大学経済学部 助教（有期）
+早稲田大学商学部 講師（任期付）
 
 ## Research interest
 * Empirical industrial organization
 * Applied microeconomics
 
 ## Contact information
-* Email: rkobayashi@keio.jp
-* Address: 2-15-45 Mita, Minato-ku, Tokyo 108-8345, JAPAN
+* Email: ryuki_kobayashi [at] aoni.waseda.jp
+* Address: School of Commerce, Waseda University, 1-6-1 Nishi-waseda, Shinjuku-ku, Tokyo 169-8050, JAPAN

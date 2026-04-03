@@ -11,16 +11,16 @@ redirect_from:
 
 Contact Information
 ======
-* Email: rkobayashi@keio.jp
-* Address: Faculty of Economics, Keio University, 2-15-45 Mita, Minato-ku, Tokyo 108-8345, JAPAN
+* Email: ryuki_kobayashi [at] aoni.waseda.jp
+* Address: School of Commerce, Waseda University, 1-6-1 Nishi-waseda, Shinjuku-ku, Tokyo 169-8050, JAPAN
 
 Current Position
 ======
-* Research Associate, Faculty of Economics, Keio University, April 2023 - present.
-
+* Assistant Professor (non-tenure-track), School of Commerce, Waseda University, April 2026 - present.
 
 Previous Employment/Positions
 ======
+* Research Associate, Faculty of Economics, Keio University, April 2023 - March 2026.
 * JSPS Research Fellowship for Young Scientists, DC2, Japan Society for the Promotion of Science, Japan. April 2021 - March 2023
 * Adjunct Researcher, Faculty of Economics, Keio University, April 2020 - March 2023
 

@@ -22,7 +22,7 @@ future                   : true
 #               Additional customization can be done by editing /_includes/author-profile.html
 author:
   # Biographic information
-  avatar           : "profile_kobayashi.jpg"
+  avatar           : "profile_pic.jpeg"
   name             : "Ryuki Kobayashi"
   pronouns         : # example: "she/her"  
   bio              : "Research Associate, Faculty of Economics, Keio University"
