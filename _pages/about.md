@@ -17,4 +17,4 @@ I am Ryuki Kobayashi (**小林 流基**), a Assistant Professor at [the School o
 
 ## Contact information
 * Email: ryuki_kobayashi [at] aoni.waseda.jp
-* Address: School of Commerce, Waseda University, 1-6-1 Nishi-waseda, Shinjuku-ku, Tokyo 169-8050, JAPAN
+* Address: School of Commerce, Waseda University, 1-6-1 Nishiwaseda, Shinjuku-ku, Tokyo 169-8050, JAPAN
