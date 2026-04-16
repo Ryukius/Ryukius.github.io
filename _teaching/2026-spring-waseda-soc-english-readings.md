@@ -8,6 +8,10 @@ date: 2026-04-01
 location: "東京都"
 ---
 
+## 初回授業資料
+
+- [BOX](https://waseda.app.box.com/folder/377016026335)
+
 ## 授業概要 (詳しくはシラバスを参照)
 
 - [シラバス](https://www.wsl.waseda.jp/syllabus/JAA104.php?pKey=1600002561062026160000256116&pLng=jp)
