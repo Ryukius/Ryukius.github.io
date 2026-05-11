@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>需要と供給の識別問題</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; }
+  .font-display { font-family: 'Crimson Pro', 'Noto Serif JP', Georgia, serif; }
+  .font-body { font-family: 'Noto Serif JP', Georgia, serif; }
+  .font-mono-x { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo } = React;
+
+// lucide-react の RotateCcw を inline SVG で代用
+const RotateCcw = ({ size = 14 }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size}
+    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+    <path d="M3 3v5h5"/>
+  </svg>
+);
+
+const PARAMS = {
+  a0: 100, a1: 1, gamma: 2,
+  b0: 20,  b1: 1, delta: -2,
+  Tmean: 25, Tsd: 4,
+  Mmean: 50, Msd: 7,
+  sigmaU: 2.0,
+};
+
+const Qmin = 0, Qmax = 80;
+const Pmin = 0, Pmax = 180;
+
+function mulberry32(a) {
+  return function () {
+    let t = (a += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function normal(rng) {
+  const u1 = Math.max(rng(), 1e-10);
+  const u2 = rng();
+  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+}
+
+function equilibrium(T, M, u_d = 0, u_s = 0, p = PARAMS) {
+  const P = (p.a0 - p.b0 + p.gamma * T - p.delta * M + u_d - u_s) / (p.a1 + p.b1);
+  const Q = p.a0 - p.a1 * P + p.gamma * T + u_d;
+  return { P, Q };
+}
+
+function generateData(seed, scenario, n = 20) {
+  const rng = mulberry32(seed);
+  const data = [];
+  for (let i = 0; i < n; i++) {
+    let T, M;
+    if (scenario === 'demand_only') {
+      T = PARAMS.Tmean + PARAMS.Tsd * normal(rng);
+      M = PARAMS.Mmean;
+    } else if (scenario === 'supply_only') {
+      T = PARAMS.Tmean;
+      M = PARAMS.Mmean + PARAMS.Msd * normal(rng);
+    } else {
+      T = PARAMS.Tmean + PARAMS.Tsd * normal(rng);
+      M = PARAMS.Mmean + PARAMS.Msd * normal(rng);
+    }
+    const u_d = PARAMS.sigmaU * normal(rng);
+    const u_s = PARAMS.sigmaU * normal(rng);
+    data.push({ T, M, u_d, u_s, ...equilibrium(T, M, u_d, u_s) });
+  }
+  return data;
+}
+
+// 逆需要関数として P = c + d*Q を OLS 推定
+function ols(data) {
+  const n = data.length;
+  const meanP = data.reduce((s, d) => s + d.P, 0) / n;
+  const meanQ = data.reduce((s, d) => s + d.Q, 0) / n;
+  let cov = 0, varQ = 0;
+  for (const d of data) {
+    cov += (d.P - meanP) * (d.Q - meanQ);
+    varQ += (d.Q - meanQ) ** 2;
+  }
+  const slope = cov / varQ;
+  const intercept = meanP - slope * meanQ;
+  return { intercept, slope };
+}
+
+const COLORS = {
+  demand: ['#93c5fd', '#2563eb', '#1e3a8a'],
+  supply: ['#fca5a5', '#dc2626', '#7f1d1d'],
+  demandFaint: '#3b82f6',
+  supplyFaint: '#ef4444',
+  point: '#18181b',
+  ols: '#047857',
+  axis: '#52525b',
+  grid: '#e7e5e4',
+  truthDemand: '#1e40af',
+  truthSupply: '#b91c1c',
+};
+
+const W = 720, H = 520;
+const margin = { top: 28, right: 28, bottom: 52, left: 60 };
+const innerW = W - margin.left - margin.right;
+const innerH = H - margin.top - margin.bottom;
+const xScale = (q) => margin.left + ((q - Qmin) / (Qmax - Qmin)) * innerW;
+const yScale = (p) => margin.top + innerH - ((p - Pmin) / (Pmax - Pmin)) * innerH;
+
+function demandLineCoords(T, u_d = 0) {
+  const P1 = (PARAMS.a0 - Qmin + PARAMS.gamma * T + u_d) / PARAMS.a1;
+  const P2 = (PARAMS.a0 - Qmax + PARAMS.gamma * T + u_d) / PARAMS.a1;
+  return { x1: xScale(Qmin), y1: yScale(P1), x2: xScale(Qmax), y2: yScale(P2) };
+}
+function supplyLineCoords(M, u_s = 0) {
+  const P1 = (Qmin - PARAMS.b0 - PARAMS.delta * M - u_s) / PARAMS.b1;
+  const P2 = (Qmax - PARAMS.b0 - PARAMS.delta * M - u_s) / PARAMS.b1;
+  return { x1: xScale(Qmin), y1: yScale(P1), x2: xScale(Qmax), y2: yScale(P2) };
+}
+
+const STAGES = [
+  { id: 1, title: '市場の均衡' },
+  { id: 2, title: '観測される散布図' },
+  { id: 3, title: 'OLSの直線' },
+  { id: 4, title: '識別の直感' },
+  { id: 5, title: '現実での識別' },
+];
+
+const STAGE1_TIMES = [
+  { T: 30, M: 44, label: 't=1' },
+  { T: 25, M: 50, label: 't=2' },
+  { T: 20, M: 56, label: 't=3' },
+];
+
+const STAGE4_DEMAND = [
+  { T: 30, M: 50, label: 't=1' },
+  { T: 25, M: 50, label: 't=2' },
+  { T: 20, M: 50, label: 't=3' },
+];
+const STAGE4_SUPPLY = [
+  { T: 25, M: 44, label: 't=1' },
+  { T: 25, M: 50, label: 't=2' },
+  { T: 25, M: 56, label: 't=3' },
+];
+
+const STAGE4_SCENARIOS = [
+  { id: 'demand_only', label: '需要だけシフト(M固定)', desc: '交点は供給曲線上を移動 → 供給曲線が見える' },
+  { id: 'supply_only', label: '供給だけシフト(T固定)', desc: '交点は需要曲線上を移動 → 需要曲線が見える' },
+];
+
+const STAGE5_SCENARIOS = [
+  { id: 'both',        label: '両方シフト(現実)',        desc: 'T も M も動く → 識別不可' },
+  { id: 'demand_only', label: '需要だけシフト(M固定)',   desc: '供給曲線が浮かび上がる' },
+  { id: 'supply_only', label: '供給だけシフト(T固定)',   desc: '需要曲線が浮かび上がる' },
+];
+
+const xTicks = [0, 20, 40, 60, 80];
+const yTicks = [0, 30, 60, 90, 120, 150, 180];
+
+function App() {
+  const [stage, setStage] = useState(1);
+  const [scenario, setScenario] = useState('both');
+  const [seed, setSeed] = useState(7);
+
+  function handleStageChange(newStage) {
+    if (newStage === 4 && scenario === 'both') {
+      setScenario('demand_only');
+    }
+    setStage(newStage);
+  }
+
+  const observations = useMemo(() => {
+    const sc = stage === 5 ? scenario : 'both';
+    return generateData(seed, sc);
+  }, [seed, scenario, stage]);
+
+  const fit = useMemo(() => ols(observations), [observations]);
+
+  const Qs = observations.map((d) => d.Q);
+  const olsQ1 = Math.min(...Qs) - 2;
+  const olsQ2 = Math.max(...Qs) + 2;
+  const olsP1 = fit.intercept + fit.slope * olsQ1;
+  const olsP2 = fit.intercept + fit.slope * olsQ2;
+
+  const stage4Times = scenario === 'supply_only' ? STAGE4_SUPPLY : STAGE4_DEMAND;
+  const stage4Ts = scenario === 'supply_only' ? [25] : [30, 25, 20];
+  const stage4Ms = scenario === 'supply_only' ? [44, 50, 56] : [50];
+
+  return (
+    <div className="min-h-screen w-full bg-stone-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <header className="border-b border-stone-300 pb-5 mb-6">
+          <div className="font-mono-x text-xs tracking-widest text-stone-500 uppercase mb-1">
+            Simultaneous Equations · Identification
+          </div>
+          <h1 className="font-display text-4xl font-semibold text-stone-900 leading-tight">
+            需要と供給の<span className="italic">識別問題</span>
+          </h1>
+          <p className="font-body text-sm text-stone-600 mt-2 max-w-3xl">
+            アイスクリーム市場を例に — 観測される均衡点 (<i>P</i>, <i>Q</i>) から、需要関数と供給関数は識別できるか?
+          </p>
+        </header>
+
+        <nav className="flex flex-wrap items-center gap-2 mb-6">
+          {STAGES.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => handleStageChange(s.id)}
+              className={`px-4 py-2 rounded-md text-sm font-body transition border ${
+                stage === s.id
+                  ? 'bg-stone-900 text-stone-50 border-stone-900'
+                  : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-100'
+              }`}
+            >
+              <span className="font-mono-x text-xs mr-2 opacity-70">0{s.id}</span>
+              {s.title}
+            </button>
+          ))}
+        </nav>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-stone-200 p-3">
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
+              {xTicks.map((t) => (
+                <line key={`xg-${t}`} x1={xScale(t)} x2={xScale(t)}
+                  y1={margin.top} y2={margin.top + innerH}
+                  stroke={COLORS.grid} strokeWidth={0.6} />
+              ))}
+              {yTicks.map((t) => (
+                <line key={`yg-${t}`} x1={margin.left} x2={margin.left + innerW}
+                  y1={yScale(t)} y2={yScale(t)}
+                  stroke={COLORS.grid} strokeWidth={0.6} />
+              ))}
+
+              <line x1={margin.left} y1={margin.top + innerH}
+                x2={margin.left + innerW} y2={margin.top + innerH}
+                stroke={COLORS.axis} strokeWidth={1} />
+              <line x1={margin.left} y1={margin.top}
+                x2={margin.left} y2={margin.top + innerH}
+                stroke={COLORS.axis} strokeWidth={1} />
+
+              {xTicks.map((t) => (
+                <g key={`xt-${t}`}>
+                  <line x1={xScale(t)} x2={xScale(t)}
+                    y1={margin.top + innerH} y2={margin.top + innerH + 4}
+                    stroke={COLORS.axis} />
+                  <text x={xScale(t)} y={margin.top + innerH + 18}
+                    textAnchor="middle" fontSize="11" fill={COLORS.axis}
+                    className="font-mono-x">{t}</text>
+                </g>
+              ))}
+              {yTicks.map((t) => (
+                <g key={`yt-${t}`}>
+                  <line x1={margin.left - 4} x2={margin.left}
+                    y1={yScale(t)} y2={yScale(t)}
+                    stroke={COLORS.axis} />
+                  <text x={margin.left - 8} y={yScale(t) + 4}
+                    textAnchor="end" fontSize="11" fill={COLORS.axis}
+                    className="font-mono-x">{t}</text>
+                </g>
+              ))}
+
+              <text x={margin.left + innerW / 2} y={H - 12}
+                textAnchor="middle" fontSize="14" fill="#27272a"
+                fontStyle="italic" className="font-display">
+                数量 Q
+              </text>
+              <text x={18} y={margin.top + innerH / 2}
+                textAnchor="middle" fontSize="14" fill="#27272a"
+                fontStyle="italic" className="font-display"
+                transform={`rotate(-90, 18, ${margin.top + innerH / 2})`}>
+                価格 P
+              </text>
+
+              {stage === 1 && (
+                <React.Fragment>
+                  {STAGE1_TIMES.map((time, i) => {
+                    const dl = demandLineCoords(time.T);
+                    const sl = supplyLineCoords(time.M);
+                    return (
+                      <g key={`time-${i}`}>
+                        <line {...dl} stroke={COLORS.demand[i]} strokeWidth={2.2} />
+                        <line {...sl} stroke={COLORS.supply[i]} strokeWidth={2.2} />
+                      </g>
+                    );
+                  })}
+                  {STAGE1_TIMES.map((time, i) => {
+                    const eq = equilibrium(time.T, time.M);
+                    return (
+                      <g key={`eq-${i}`}>
+                        <circle cx={xScale(eq.Q)} cy={yScale(eq.P)} r={5.5}
+                          fill="#000" stroke="#fff" strokeWidth={2} />
+                        <text x={xScale(eq.Q) + 9} y={yScale(eq.P) - 9}
+                          fontSize="12" fill="#000" fontWeight="600"
+                          className="font-mono-x">{time.label}</text>
+                      </g>
+                    );
+                  })}
+                </React.Fragment>
+              )}
+
+              {stage === 4 && (
+                <React.Fragment>
+                  {stage4Ts.map((T, i) => {
+                    const dl = demandLineCoords(T);
+                    const colorIdx = stage4Ts.length === 1 ? 1 : i;
+                    return (
+                      <line key={`d-${i}`} {...dl}
+                        stroke={COLORS.demand[colorIdx]} strokeWidth={2.2} />
+                    );
+                  })}
+                  {stage4Ms.map((M, i) => {
+                    const sl = supplyLineCoords(M);
+                    const colorIdx = stage4Ms.length === 1 ? 1 : i;
+                    return (
+                      <line key={`s-${i}`} {...sl}
+                        stroke={COLORS.supply[colorIdx]} strokeWidth={2.2} />
+                    );
+                  })}
+                  {stage4Times.map((time, i) => {
+                    const eq = equilibrium(time.T, time.M);
+                    return (
+                      <g key={`eq-${i}`}>
+                        <circle cx={xScale(eq.Q)} cy={yScale(eq.P)} r={5.5}
+                          fill="#000" stroke="#fff" strokeWidth={2} />
+                        <text x={xScale(eq.Q) + 9} y={yScale(eq.P) - 9}
+                          fontSize="12" fill="#000" fontWeight="600"
+                          className="font-mono-x">{time.label}</text>
+                      </g>
+                    );
+                  })}
+                </React.Fragment>
+              )}
+
+              {stage === 5 && observations.map((d, i) => {
+                const showDemand = scenario === 'both' || scenario === 'demand_only';
+                const showSupply = scenario === 'both' || scenario === 'supply_only';
+                return (
+                  <g key={`bg-${i}`}>
+                    {showDemand && (
+                      <line {...demandLineCoords(d.T, d.u_d)}
+                        stroke={COLORS.demandFaint}
+                        strokeWidth={1} strokeOpacity={0.18} />
+                    )}
+                    {showSupply && (
+                      <line {...supplyLineCoords(d.M, d.u_s)}
+                        stroke={COLORS.supplyFaint}
+                        strokeWidth={1} strokeOpacity={0.18} />
+                    )}
+                  </g>
+                );
+              })}
+
+              {stage === 5 && scenario === 'demand_only' && (
+                <line {...supplyLineCoords(PARAMS.Mmean)}
+                  stroke={COLORS.truthSupply}
+                  strokeWidth={2.8} strokeOpacity={0.95} />
+              )}
+              {stage === 5 && scenario === 'supply_only' && (
+                <line {...demandLineCoords(PARAMS.Tmean)}
+                  stroke={COLORS.truthDemand}
+                  strokeWidth={2.8} strokeOpacity={0.95} />
+              )}
+
+              {(stage === 2 || stage === 3 || stage === 5) && observations.map((d, i) => (
+                <circle key={`obs-${i}`} cx={xScale(d.Q)} cy={yScale(d.P)} r={4.5}
+                  fill={COLORS.point} fillOpacity={0.85}
+                  stroke="#fff" strokeWidth={0.9} />
+              ))}
+
+              {(stage === 3 || stage === 5) && (
+                <line x1={xScale(olsQ1)} y1={yScale(olsP1)}
+                  x2={xScale(olsQ2)} y2={yScale(olsP2)}
+                  stroke={COLORS.ols} strokeWidth={2.8} strokeDasharray="7 4" />
+              )}
+            </svg>
+          </div>
+
+          <aside className="space-y-4">
+            <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-5">
+              <div className="font-mono-x text-xs tracking-wider text-stone-500 mb-1">
+                STAGE 0{stage}
+              </div>
+              <h2 className="font-display text-2xl font-semibold text-stone-900 mb-2">
+                {STAGES[stage - 1].title}
+              </h2>
+              <div className="font-body text-sm text-stone-700 leading-relaxed">
+                {stage === 1 && (
+                  <React.Fragment>
+                    <p className="mb-2">
+                      各時点 <i>t</i> で、市場は需要曲線(青)と供給曲線(赤)の
+                      <strong>交点</strong>で均衡する。
+                    </p>
+                    <p>
+                      気温 <i>T</i> と牛乳価格 <i>M</i> はそれぞれ別の理由で動くので、
+                      時点ごとに需要曲線も供給曲線も両方シフトする。
+                      均衡点 (<i>P*</i>, <i>Q*</i>) を3時点見ても、需要曲線とも供給曲線とも違う場所に並ぶ。
+                    </p>
+                  </React.Fragment>
+                )}
+                {stage === 2 && (
+                  <p>
+                    観測者が見るのは、各時点の均衡点 (<i>P</i>, <i>Q</i>) <strong>だけ</strong>。
+                    背後にある需要曲線も供給曲線も見えない。
+                    20時点の散布図からは、<strong>需要関数も供給関数も読み取れない</strong>。
+                  </p>
+                )}
+                {stage === 3 && (
+                  <p>
+                    散布図に直線(OLS)を当てはめても、それは
+                    <strong>需要関数でも供給関数でもない</strong>。
+                    需要側のシフトと供給側のシフトが混ざり合った「何か」を捉えているにすぎない。
+                  </p>
+                )}
+                {stage === 4 && scenario === 'demand_only' && (
+                  <React.Fragment>
+                    <p className="mb-2">
+                      もし牛乳価格 <i>M</i> が動かず、気温 <i>T</i> だけが動いたら?
+                    </p>
+                    <p>
+                      供給曲線は1本に固定され、需要曲線(青)だけがシフトする。
+                      3時点の交点はすべて<strong>同じ供給曲線上</strong>に並ぶので、
+                      観測点から真の供給曲線を特定できる。
+                    </p>
+                  </React.Fragment>
+                )}
+                {stage === 4 && scenario === 'supply_only' && (
+                  <React.Fragment>
+                    <p className="mb-2">
+                      もし気温 <i>T</i> が動かず、牛乳価格 <i>M</i> だけが動いたら?
+                    </p>
+                    <p>
+                      需要曲線は1本に固定され、供給曲線(赤)だけがシフトする。
+                      3時点の交点はすべて<strong>同じ需要曲線上</strong>に並ぶので、
+                      観測点から真の需要曲線を特定できる。
+                    </p>
+                  </React.Fragment>
+                )}
+                {stage === 4 && (
+                  <div className="mt-3 pt-3 border-t border-stone-100 text-stone-500 text-xs leading-relaxed">
+                    観測されたデータから真の関係を特定することを
+                    <strong>識別 (identification)</strong>と呼ぶ。
+                  </div>
+                )}
+                {stage === 5 && scenario === 'both' && (
+                  <p>
+                    現実には需要曲線も供給曲線も両方シフトしている(薄く描かれた多数の曲線)。
+                    観測点はそれぞれの交点だが、20点の散布図からは
+                    <strong>どちらの曲線も識別できない</strong>。
+                  </p>
+                )}
+                {stage === 5 && scenario === 'demand_only' && (
+                  <p>
+                    牛乳価格 <i>M</i> を固定すると、需要曲線(薄い青)だけがシフトする。
+                    誤差項のため観測点は供給曲線上にぴったり乗らないが、
+                    その<strong>近傍に集まる</strong>。
+                    観測点から真の供給曲線を識別できる。
+                  </p>
+                )}
+                {stage === 5 && scenario === 'supply_only' && (
+                  <p>
+                    気温 <i>T</i> を固定すると、供給曲線(薄い赤)だけがシフトする。
+                    誤差項のため観測点は需要曲線上にぴったり乗らないが、
+                    その<strong>近傍に集まる</strong>。
+                    観測点から真の需要曲線を識別できる。
+                  </p>
+                )}
+                {stage === 5 && (
+                  <div className="mt-3 pt-3 border-t border-stone-100 text-stone-500 text-xs leading-relaxed">
+                    現実には両方シフトしているが、外的な要因で片方だけを動かす方法があれば、
+                    もう片方を識別できる。これが
+                    <strong>操作変数 (instrumental variable, IV)</strong>のアイデア。
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {(stage === 4 || stage === 5) && (
+              <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-4">
+                <h3 className="font-display text-sm font-semibold text-stone-900 mb-3 tracking-wide uppercase">
+                  シナリオ
+                </h3>
+                <div className="space-y-2">
+                  {(stage === 4 ? STAGE4_SCENARIOS : STAGE5_SCENARIOS).map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => setScenario(s.id)}
+                      className={`w-full text-left px-3 py-2 rounded-md text-xs font-body transition border ${
+                        scenario === s.id
+                          ? 'bg-stone-900 text-stone-50 border-stone-900'
+                          : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                      }`}
+                    >
+                      <div className="font-semibold">{s.label}</div>
+                      <div className={`text-[11px] mt-0.5 ${scenario === s.id ? 'text-stone-300' : 'text-stone-500'}`}>
+                        {s.desc}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-4">
+              <h3 className="font-display text-sm font-semibold text-stone-900 mb-3 tracking-wide uppercase">
+                凡例
+              </h3>
+              <div className="space-y-1.5 text-xs font-body text-stone-700">
+                {stage === 1 && (
+                  <React.Fragment>
+                    {STAGE1_TIMES.map((s, i) => (
+                      <div key={i} className="flex items-center gap-1.5">
+                        <svg width="20" height="3"><line x1="0" y1="1.5" x2="20" y2="1.5" stroke={COLORS.demand[i]} strokeWidth="2.5" /></svg>
+                        <svg width="20" height="3"><line x1="0" y1="1.5" x2="20" y2="1.5" stroke={COLORS.supply[i]} strokeWidth="2.5" /></svg>
+                        <span><strong>{s.label}</strong>: <i>T</i>={s.T}, <i>M</i>={s.M}</span>
+                      </div>
+                    ))}
+                    <Dot color={COLORS.point} label="均衡点 (P*, Q*)" />
+                  </React.Fragment>
+                )}
+                {(stage === 2 || stage === 3) && (
+                  <Dot color={COLORS.point} label="観測値 (P, Q)" />
+                )}
+                {stage === 4 && scenario === 'demand_only' && (
+                  <React.Fragment>
+                    {[30, 25, 20].map((T, i) => (
+                      <Line key={i} color={COLORS.demand[i]}
+                        label={<span><i>D</i>(P, T={T})</span>} />
+                    ))}
+                    <Line color={COLORS.supply[1]} label={<span><i>S</i>(P, M=50)</span>} />
+                    <Dot color={COLORS.point} label="均衡点 (P*, Q*)" />
+                  </React.Fragment>
+                )}
+                {stage === 4 && scenario === 'supply_only' && (
+                  <React.Fragment>
+                    <Line color={COLORS.demand[1]} label={<span><i>D</i>(P, T=25)</span>} />
+                    {[44, 50, 56].map((M, i) => (
+                      <Line key={i} color={COLORS.supply[i]}
+                        label={<span><i>S</i>(P, M={M})</span>} />
+                    ))}
+                    <Dot color={COLORS.point} label="均衡点 (P*, Q*)" />
+                  </React.Fragment>
+                )}
+                {stage === 5 && (scenario === 'both' || scenario === 'demand_only') && (
+                  <Line color={COLORS.demandFaint} label="需要曲線(各時点)" faint />
+                )}
+                {stage === 5 && (scenario === 'both' || scenario === 'supply_only') && (
+                  <Line color={COLORS.supplyFaint} label="供給曲線(各時点)" faint />
+                )}
+                {stage === 5 && scenario === 'demand_only' && (
+                  <Line color={COLORS.truthSupply} label="真の供給曲線" />
+                )}
+                {stage === 5 && scenario === 'supply_only' && (
+                  <Line color={COLORS.truthDemand} label="真の需要曲線" />
+                )}
+                {stage === 5 && (
+                  <Dot color={COLORS.point} label="観測値 (P, Q)" />
+                )}
+                {(stage === 3 || stage === 5) && (
+                  <Line color={COLORS.ols} label="OLS直線" dashed />
+                )}
+              </div>
+            </div>
+
+            <div className="bg-stone-100 rounded-lg p-4 text-xs font-mono-x text-stone-700 leading-relaxed">
+              <div className="font-display text-[11px] tracking-wider uppercase text-stone-500 mb-2">
+                Model
+              </div>
+              <div>需要: <i>Q</i> = 100 − <i>P</i> + 2<i>T</i> {(stage === 5) && <span>+ <i>u<sub>d</sub></i></span>}</div>
+              <div>供給: <i>Q</i> = 20 + <i>P</i> − 2<i>M</i> {(stage === 5) && <span>+ <i>u<sub>s</sub></i></span>}</div>
+              <div className="text-stone-500 mt-2 text-[11px] font-body">
+                <i>T</i>: 気温(需要シフト)、<i>M</i>: 牛乳価格(供給シフト)
+                {(stage === 5) && <React.Fragment>、<i>u<sub>d</sub></i>, <i>u<sub>s</sub></i>: 誤差項</React.Fragment>}
+              </div>
+            </div>
+
+            {(stage === 2 || stage === 3 || stage === 5) && (
+              <button
+                onClick={() => setSeed((s) => s + 1)}
+                className="w-full px-3 py-2.5 rounded-md text-xs font-body bg-stone-700 text-stone-50 hover:bg-stone-800 transition flex items-center justify-center gap-2"
+              >
+                <RotateCcw size={14} />
+                データを再生成
+              </button>
+            )}
+          </aside>
+        </div>
+
+        <footer className="mt-8 pt-4 border-t border-stone-200 font-mono-x text-[11px] text-stone-500 tracking-wide">
+          回帰分析中級 — 早稲田商学部
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function Line({ color, label, dashed, faint }) {
+  return (
+    <div className="flex items-center gap-2">
+      <svg width="22" height="3">
+        <line x1="0" y1="1.5" x2="22" y2="1.5"
+          stroke={color}
+          strokeWidth={faint ? "1.5" : "2.5"}
+          strokeOpacity={faint ? 0.45 : 1}
+          strokeDasharray={dashed ? '5 2' : undefined} />
+      </svg>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function Dot({ color, label }) {
+  return (
+    <div className="flex items-center gap-2">
+      <svg width="22" height="10">
+        <circle cx="11" cy="5" r="3.5" fill={color} />
+      </svg>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
