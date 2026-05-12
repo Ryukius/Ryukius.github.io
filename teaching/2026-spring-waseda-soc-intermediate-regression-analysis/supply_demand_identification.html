@@ -318,17 +318,21 @@ function App() {
                   {stage4Ts.map((T, i) => {
                     const dl = demandLineCoords(T);
                     const colorIdx = stage4Ts.length === 1 ? 1 : i;
+                    const isShifting = stage4Ts.length > 1;
                     return (
                       <line key={`d-${i}`} {...dl}
-                        stroke={COLORS.demand[colorIdx]} strokeWidth={2.2} />
+                        stroke={COLORS.demand[colorIdx]} strokeWidth={2.2}
+                        strokeDasharray={isShifting ? '6 4' : undefined} />
                     );
                   })}
                   {stage4Ms.map((M, i) => {
                     const sl = supplyLineCoords(M);
                     const colorIdx = stage4Ms.length === 1 ? 1 : i;
+                    const isShifting = stage4Ms.length > 1;
                     return (
                       <line key={`s-${i}`} {...sl}
-                        stroke={COLORS.supply[colorIdx]} strokeWidth={2.2} />
+                        stroke={COLORS.supply[colorIdx]} strokeWidth={2.2}
+                        strokeDasharray={isShifting ? '6 4' : undefined} />
                     );
                   })}
                   {stage4Times.map((time, i) => {
@@ -349,17 +353,21 @@ function App() {
               {stage === 5 && observations.map((d, i) => {
                 const showDemand = scenario === 'both' || scenario === 'demand_only';
                 const showSupply = scenario === 'both' || scenario === 'supply_only';
+                const demandIsShifting = scenario === 'both' || scenario === 'demand_only';
+                const supplyIsShifting = scenario === 'both' || scenario === 'supply_only';
                 return (
                   <g key={`bg-${i}`}>
                     {showDemand && (
                       <line {...demandLineCoords(d.T, d.u_d)}
                         stroke={COLORS.demandFaint}
-                        strokeWidth={1} strokeOpacity={0.18} />
+                        strokeWidth={1} strokeOpacity={0.22}
+                        strokeDasharray={demandIsShifting ? '4 3' : undefined} />
                     )}
                     {showSupply && (
                       <line {...supplyLineCoords(d.M, d.u_s)}
                         stroke={COLORS.supplyFaint}
-                        strokeWidth={1} strokeOpacity={0.18} />
+                        strokeWidth={1} strokeOpacity={0.22}
+                        strokeDasharray={supplyIsShifting ? '4 3' : undefined} />
                     )}
                   </g>
                 );
@@ -539,7 +547,7 @@ function App() {
                   <React.Fragment>
                     {[30, 25, 20].map((T, i) => (
                       <Line key={i} color={COLORS.demand[i]}
-                        label={<span><i>D</i>(P, T={T})</span>} />
+                        label={<span><i>D</i>(P, T={T})</span>} dashed />
                     ))}
                     <Line color={COLORS.supply[1]} label={<span><i>S</i>(P, M=50)</span>} />
                     <Dot color={COLORS.point} label="均衡点 (P*, Q*)" />
@@ -550,7 +558,7 @@ function App() {
                     <Line color={COLORS.demand[1]} label={<span><i>D</i>(P, T=25)</span>} />
                     {[44, 50, 56].map((M, i) => (
                       <Line key={i} color={COLORS.supply[i]}
-                        label={<span><i>S</i>(P, M={M})</span>} />
+                        label={<span><i>S</i>(P, M={M})</span>} dashed />
                     ))}
                     <Dot color={COLORS.point} label="均衡点 (P*, Q*)" />
                   </React.Fragment>
