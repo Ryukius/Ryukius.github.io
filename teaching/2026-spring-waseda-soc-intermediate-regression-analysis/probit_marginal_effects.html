@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Probit の限界効果はなぜ他の変数に依存するのか</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$','$$']] },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --ink:#19232e; --muted:#69737d;
+  --line:#e4e8ed; --grid:#eceff3; --soft:#f0f3f6;
+  --eta:#1f5673;            /* Xβ と φ の色 */
+  --x1:#cf6a2c;             /* X1 */
+  --x2:#3f7a52;             /* X2 */
+  --x3:#7a5298;             /* X3 */
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Hiragino Kaku Gothic ProN","Yu Gothic Medium","Yu Gothic",Meiryo,"Segoe UI",system-ui,sans-serif;
+  line-height:1.7; -webkit-font-smoothing:antialiased;
+  font-feature-settings:"palt" 1;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:32px 22px 80px}
+
+header.hd{margin-bottom:28px}
+.eyebrow{font-size:12.5px;letter-spacing:.18em;color:var(--eta);font-weight:700;text-transform:uppercase}
+h1{font-size:clamp(22px,3.4vw,31px);line-height:1.35;margin:.35em 0 .12em;font-weight:800;letter-spacing:.01em}
+.subt{font-size:15.5px;font-weight:700;color:var(--eta);margin:0 0 .5em;letter-spacing:.02em}
+.lede{color:var(--muted);font-size:15px;max-width:62ch}
+
+.eq{background:#fbfcfd;border:1px solid var(--line);border-radius:10px;padding:10px 16px;margin:14px 0;overflow-x:auto}
+
+.panel{
+  background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  padding:24px 24px 26px;margin:24px 0;
+  box-shadow:0 1px 2px rgba(20,35,50,.04),0 8px 24px -18px rgba(20,35,50,.18);
+}
+.panel h2{font-size:18.5px;margin:0 0 2px;font-weight:800;display:flex;align-items:baseline;gap:10px}
+.panel h2 .no{font-size:12px;font-weight:700;color:#fff;background:var(--eta);
+  border-radius:6px;padding:2px 8px;letter-spacing:.04em;transform:translateY(-1px)}
+.panel .sub{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+
+.grid2{display:grid;grid-template-columns:300px 1fr;gap:26px;align-items:start}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+
+.controls{display:flex;flex-direction:column;gap:16px}
+.ctl label{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px;font-weight:700;margin-bottom:5px}
+.ctl label .val{font-variant-numeric:tabular-nums;font-size:14px;color:var(--ink);background:var(--soft);
+  border-radius:6px;padding:1px 8px;min-width:54px;text-align:right;font-weight:700}
+input[type=range]{width:100%;height:22px;margin:0;cursor:pointer;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:3px;background:var(--line)}
+input[type=range]::-moz-range-track{height:5px;border-radius:3px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;
+  background:var(--eta);margin-top:-6px;border:2.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+input[type=range]::-moz-range-thumb{width:17px;height:17px;border-radius:50%;background:var(--eta);
+  border:2.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.x1 input[type=range]::-webkit-slider-thumb{background:var(--x1)} .x1 input[type=range]::-moz-range-thumb{background:var(--x1)}
+.x2 input[type=range]::-webkit-slider-thumb{background:var(--x2)} .x2 input[type=range]::-moz-range-thumb{background:var(--x2)}
+.x3 input[type=range]::-webkit-slider-thumb{background:var(--x3)} .x3 input[type=range]::-moz-range-thumb{background:var(--x3)}
+.x1 label .val{color:var(--x1)} .x2 label .val{color:var(--x2)} .x3 label .val{color:var(--x3)}
+
+.readout{background:var(--soft);border-radius:10px;padding:12px 14px;font-size:13px;margin-top:2px}
+.readout .row{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0}
+.readout .row + .row{border-top:1px dashed #dde3e9}
+.readout .k{color:var(--muted)}
+.readout .v{font-variant-numeric:tabular-nums;font-weight:700;font-size:14.5px}
+
+.betabox{font-size:12.5px;color:var(--muted);background:#fbfcfd;border:1px solid var(--line);
+  border-radius:9px;padding:9px 12px;margin-top:2px}
+.betabox b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+.plots{display:flex;flex-direction:column;gap:14px}
+.cv{width:100%;display:block;border-radius:10px;background:#fff}
+.cap{font-size:12.5px;color:var(--muted);margin:6px 2px 0}
+.note{font-size:13.5px;color:var(--muted);margin-top:16px;border-left:3px solid var(--eta);
+  padding:2px 0 2px 14px;background:linear-gradient(90deg,rgba(31,86,115,.05),transparent)}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-left:6px}
+.seg button{border:none;background:#fff;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer;
+  color:var(--muted);font-family:inherit}
+.seg button.on{color:#fff}
+.seg button + button{border-left:1px solid var(--line)}
+.selrow{display:flex;flex-wrap:wrap;gap:18px;align-items:center;font-size:13.5px;margin-bottom:14px}
+.selrow .lab{font-weight:700}
+
+footer{color:var(--muted);font-size:12.5px;margin-top:34px;border-top:1px solid var(--line);padding-top:16px}
+a{color:var(--eta)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hd">
+  <div class="eyebrow">回帰分析中級 ・ 二項従属変数モデル</div>
+  <h1>限界効果はなぜ「他の変数」に依存するのか</h1>
+  <p class="subt">Probit の例</p>
+  <p class="lede">Probit では限界効果が $\dfrac{\partial \Pr(Y=1\mid X)}{\partial X_j}=\phi(X\beta)\,\beta_j$ となる。
+  係数 $\beta_j$ は定数だが、密度 $\phi$ の中身である $X\beta$ は評価する点に応じて変わる。つまり <b>他の変数の値が変われば、ある変数の限界効果も変わる</b>。以下では、つまみを動かして変数の値を変えることができ、そのことを確かめられる。</p>
+</header>
+
+<!-- ===================== Panel 1 ===================== -->
+<section class="panel">
+  <h2><span class="no">1</span>まず1変数で：$\Phi$ の傾きが $\phi$ である</h2>
+  <p class="sub">$\Pr(Y=1\mid X)=\Phi(\beta_1 X)$（切片 $0$）。S字曲線の各点での傾きを集めたものが、下の釣鐘型 $\phi(\beta_1 X)\,\beta_1$ である。点を動かすと傾きが変わることを確認する。</p>
+  <div class="grid2">
+    <div class="controls">
+      <div class="ctl"><label>評価点 $X$ <span class="val" id="s1xv">0.00</span></label>
+        <input type="range" id="s1x" min="-4" max="4" step="0.05" value="0"></div>
+      <div class="ctl"><label>係数 $\beta_1$ <span class="val" id="s1bv">1.00</span></label>
+        <input type="range" id="s1b" min="0.2" max="2.5" step="0.05" value="1.0"></div>
+      <div class="readout">
+        <div class="row"><span class="k">$\beta_1 X$（$\phi$ の中身）</span><span class="v" id="s1eta">0.00</span></div>
+        <div class="row"><span class="k">$\Phi$ の傾き $\phi(\beta_1 X)$</span><span class="v" id="s1phi">0.399</span></div>
+        <div class="row"><span class="k">限界効果 $\phi(\beta_1 X)\,\beta_1$</span><span class="v" id="s1me">0.399</span></div>
+      </div>
+      <div class="note">$\phi$ は釣鐘型で $\beta_1 X=0$（確率 $0.5$ 付近）で最大、裾で小さい。確率は $0$ と $1$ で頭打ちなので、すでに端にいる主体は $X$ が動いても結果が変わりにくい。</div>
+    </div>
+    <div class="plots">
+      <div><canvas id="s1cdf" class="cv"></canvas>
+        <div class="cap">$\Pr(Y=1\mid X)=\Phi(\beta_1 X)$ と接線（傾き $=\phi(\beta_1 X)\,\beta_1$）</div></div>
+      <div><canvas id="s1pdf" class="cv"></canvas>
+        <div class="cap">限界効果 $\phi(\beta_1 X)\,\beta_1$（S字曲線の傾きを集めたもの）</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== Panel 2 ===================== -->
+<section class="panel">
+  <h2><span class="no">2</span>3変数の例</h2>
+  <p class="sub">$\Pr(Y=1\mid X)=\Phi(\beta_0+\beta_1X_1+\beta_2X_2+\beta_3X_3)$。<b>係数は固定</b>。$X$ を動かすと $X\beta$ が動き、累積分布関数 $\Phi$ 上の現在地と、その点の傾き $\phi(X\beta)$ が変わる。すると<b>3変数すべての</b>限界効果が一斉に変わる。</p>
+  <div class="grid2">
+    <div class="controls">
+      <div class="ctl x1"><label>$X_1$ <span class="val" id="x1v">0.50</span></label>
+        <input type="range" id="x1" min="-2" max="2" step="0.05" value="0.5"></div>
+      <div class="ctl x2"><label>$X_2$ <span class="val" id="x2v">0.40</span></label>
+        <input type="range" id="x2" min="-2" max="2" step="0.05" value="0.4"></div>
+      <div class="ctl x3"><label>$X_3$ <span class="val" id="x3v">0.00</span></label>
+        <input type="range" id="x3" min="-2" max="2" step="0.05" value="0.0"></div>
+      <div class="betabox">固定パラメータ：$\beta_0=$ <b>−0.40</b>, $\beta_1=$ <b>0.90</b>, $\beta_2=$ <b>−0.70</b>, $\beta_3=$ <b>0.50</b></div>
+      <div class="readout">
+        <div class="row"><span class="k">$X\beta$（$\phi$ の中身）</span><span class="v" id="p2eta">—</span></div>
+        <div class="row"><span class="k">$\Phi$ の傾き $\phi(X\beta)$</span><span class="v" id="p2phi">—</span></div>
+        <div class="row"><span class="k">予測確率 $\Phi(X\beta)$</span><span class="v" id="p2P">—</span></div>
+      </div>
+    </div>
+    <div class="plots">
+      <div><canvas id="p2cdf" class="cv"></canvas>
+        <div class="cap">$\Pr(Y=1\mid X)=\Phi(X\beta)$。$X$ が動くと $X\beta$ が動き、CDF 上の現在地と接線の傾き（$=\phi(X\beta)$）が変わる。</div></div>
+      <div><canvas id="p2bell" class="cv"></canvas>
+        <div class="cap">その傾き $\phi(X\beta)$ を取り出した釣鐘。<b>上の点の傾き＝下の点の高さ</b>。これが限界効果の共通因子。</div></div>
+      <div><canvas id="p2bars" class="cv"></canvas>
+        <div class="cap">限界効果 $\phi(X\beta)\,\beta_j$（符号付き）。$X\beta$ の値が裾の方の値を取ると、3つとも値が小さくなる。</div></div>
+    </div>
+  </div>
+  <div class="note">同じ $\beta_1$ でも、$X_2$ や $X_3$ を動かして $X\beta$ を裾の方に移動させると、$X_1$ の限界効果は小さくなる。これが「他の変数に依存する」ということである。</div>
+</section>
+
+<!-- ===================== Panel 3 ===================== -->
+<section class="panel">
+  <h2><span class="no">3</span>他の変数の値によって限界効果が変わることを確認</h2>
+  <p class="sub">注目する変数の限界効果を、横軸に取った別の変数の関数として描く（残りは Panel 2 のつまみの値で固定）。曲線上の点が現在地である。</p>
+  <div class="selrow">
+    <span><span class="lab">注目する限界効果</span>
+      <span class="seg" id="focusSeg">
+        <button data-j="1" class="on">$X_1$</button><button data-j="2">$X_2$</button><button data-j="3">$X_3$</button>
+      </span></span>
+    <span><span class="lab">横軸に動かす変数</span>
+      <span class="seg" id="axisSeg">
+        <button data-k="1">$X_1$</button><button data-k="2" class="on">$X_2$</button><button data-k="3">$X_3$</button>
+      </span></span>
+  </div>
+  <canvas id="p3" class="cv"></canvas>
+  <div class="cap" id="p3cap">横軸 $X_2$、縦軸 $\partial P/\partial X_1=\phi(X\beta)\,\beta_1$。$X_1,X_3$ は固定。</div>
+  <div class="note" id="p3note">—</div>
+</section>
+
+<footer>
+  回帰分析中級（早稲田大学商学部）。本ツールは講義用のデモであり、$\phi,\Phi$ は標準正規分布の密度・分布関数を用いている。$\beta$ は説明のための例示値である。
+</footer>
+
+</div>
+
+<script>
+"use strict";
+/* ---------- 標準正規 ---------- */
+function erf(x){
+  const s=x<0?-1:1; x=Math.abs(x);
+  const t=1/(1+0.3275911*x);
+  const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return s*y;
+}
+const SQRT2=Math.SQRT2, INV_SQRT2PI=1/Math.sqrt(2*Math.PI);
+const ncdf=z=>0.5*(1+erf(z/SQRT2));
+const npdf=z=>INV_SQRT2PI*Math.exp(-z*z/2);
+
+const COL={eta:'#1f5673',x1:'#cf6a2c',x2:'#3f7a52',x3:'#7a5298',
+  grid:'#eceff3',axis:'#9aa4ad',ink:'#19232e',muted:'#69737d',zero:'#c2cad2',tan:'#566370'};
+const XCOL=[null,COL.x1,COL.x2,COL.x3];
+const XLAB=[null,'X_1','X_2','X_3'];
+
+/* ---------- 高解像度キャンバス ---------- */
+function fit(cv,hCss){
+  const dpr=window.devicePixelRatio||1;
+  const wCss=cv.clientWidth||cv.parentElement.clientWidth;
+  cv.style.height=hCss+'px';
+  cv.width=Math.round(wCss*dpr); cv.height=Math.round(hCss*dpr);
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx,w:wCss,h:hCss};
+}
+function axesFrame(ctx,m,xr,yr){
+  // mapping closures
+  const X=v=>m.l+(v-xr[0])/(xr[1]-xr[0])*(m.w-m.l-m.r);
+  const Y=v=>m.h-m.b-(v-yr[0])/(yr[1]-yr[0])*(m.h-m.t-m.b);
+  return {X,Y};
+}
+function clear(ctx,w,h){ctx.clearRect(0,0,w,h);}
+
+/* ---------- Panel 1 ---------- */
+const s1={x:0,b:1.0};
+function drawS1(){
+  const eta=s1.b*s1.x, phi=npdf(eta), me=phi*s1.b;
+  document.getElementById('s1xv').textContent=s1.x.toFixed(2);
+  document.getElementById('s1bv').textContent=s1.b.toFixed(2);
+  document.getElementById('s1eta').textContent=eta.toFixed(3);
+  document.getElementById('s1phi').textContent=phi.toFixed(3);
+  document.getElementById('s1me').textContent=me.toFixed(3);
+
+  // -- CDF plot --
+  let {ctx,w,h}=fit(document.getElementById('s1cdf'),200);
+  clear(ctx,w,h);
+  const m={l:42,r:14,t:14,b:26,w,h};
+  const xr=[-4,4], yr=[0,1]; const {X,Y}=axesFrame(ctx,m,xr,yr);
+  gridXY(ctx,m,X,Y,xr,yr,[ -4,-2,0,2,4],[0,0.5,1],'X','Pr(Y=1|X)',v=>v.toFixed(1));
+  // curve
+  ctx.strokeStyle=COL.eta; ctx.lineWidth=2.5; ctx.beginPath();
+  for(let i=0;i<=240;i++){const xv=xr[0]+(xr[1]-xr[0])*i/240; const yv=ncdf(s1.b*xv);
+    const px=X(xv),py=Y(yv); i?ctx.lineTo(px,py):ctx.moveTo(px,py);} ctx.stroke();
+  // tangent at x : 端点をクランプせず、傾きを保ったままプロット枠でクリップ
+  const p0=ncdf(eta), slope=me; // dP/dX = phi(b1 X)*b1
+  const dx=2.2;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(m.l,m.t,m.w-m.l-m.r,m.h-m.t-m.b); ctx.clip();
+  ctx.strokeStyle=COL.tan; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath();
+  ctx.moveTo(X(s1.x-dx),Y(p0-slope*dx)); ctx.lineTo(X(s1.x+dx),Y(p0+slope*dx));
+  ctx.stroke(); ctx.setLineDash([]);
+  ctx.restore();
+  dot(ctx,X(s1.x),Y(p0),COL.x1);
+  vline(ctx,X(s1.x),Y(0),Y(p0),COL.x1);
+
+  // -- PDF / ME plot --
+  ({ctx,w,h}=fit(document.getElementById('s1pdf'),200)); clear(ctx,w,h);
+  const m2={l:42,r:14,t:14,b:26,w,h};
+  const ymax=0.42*s1.b; const yr2=[0,ymax];
+  const {X:X2,Y:Y2}=axesFrame(ctx,m2,xr,yr2);
+  const yt=[0,ymax/2,ymax];
+  gridXY(ctx,m2,X2,Y2,xr,yr2,[-4,-2,0,2,4],yt,'X','∂P/∂X',v=>v.toFixed(2));
+  ctx.strokeStyle=COL.eta; ctx.lineWidth=2.5; ctx.beginPath();
+  for(let i=0;i<=240;i++){const xv=xr[0]+(xr[1]-xr[0])*i/240; const yv=npdf(s1.b*xv)*s1.b;
+    const px=X2(xv),py=Y2(yv); i?ctx.lineTo(px,py):ctx.moveTo(px,py);} ctx.stroke();
+  dot(ctx,X2(s1.x),Y2(me),COL.x1);
+  vline(ctx,X2(s1.x),Y2(0),Y2(me),COL.x1);
+}
+const clamp01=v=>Math.max(0,Math.min(1,v));
+
+/* ---------- Panel 2 / 3 共有状態 ---------- */
+const B=[-0.4,0.9,-0.7,0.5];           // b0,b1,b2,b3
+const Xs=[null,0.5,0.4,0.0];           // X1,X2,X3 (index 1..3)
+function eta(){return B[0]+B[1]*Xs[1]+B[2]*Xs[2]+B[3]*Xs[3];}
+
+function drawP2(){
+  const e=eta(), phi=npdf(e), P=ncdf(e);
+  document.getElementById('x1v').textContent=Xs[1].toFixed(2);
+  document.getElementById('x2v').textContent=Xs[2].toFixed(2);
+  document.getElementById('x3v').textContent=Xs[3].toFixed(2);
+  document.getElementById('p2eta').textContent=e.toFixed(3);
+  document.getElementById('p2phi').textContent=phi.toFixed(3);
+  document.getElementById('p2P').textContent=P.toFixed(3);
+
+  // -- CDF: Phi(Xb) with tangent, slope = phi(Xb) --
+  {
+    const f=fit(document.getElementById('p2cdf'),168); const ctx=f.ctx,w=f.w,h=f.h; clear(ctx,w,h);
+    const m={l:46,r:14,t:14,b:26,w,h}; const xr=[-5,5], yr=[0,1];
+    const {X,Y}=axesFrame(ctx,m,xr,yr);
+    gridXY(ctx,m,X,Y,xr,yr,[-5,-2.5,0,2.5,5],[0,0.5,1],'Xβ','Pr(Y=1|X)',v=>v.toFixed(1));
+    ctx.strokeStyle=COL.eta; ctx.lineWidth=2.5; ctx.beginPath();
+    for(let i=0;i<=240;i++){const xv=xr[0]+(xr[1]-xr[0])*i/240; const yv=ncdf(xv);
+      const px=X(xv),py=Y(yv); i?ctx.lineTo(px,py):ctx.moveTo(px,py);} ctx.stroke();
+    const dx=2.2;
+    ctx.save(); ctx.beginPath(); ctx.rect(m.l,m.t,m.w-m.l-m.r,m.h-m.t-m.b); ctx.clip();
+    ctx.strokeStyle=COL.tan; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath();
+    ctx.moveTo(X(e-dx),Y(P-phi*dx)); ctx.lineTo(X(e+dx),Y(P+phi*dx));
+    ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+    vline(ctx,X(e),Y(0),Y(P),COL.eta);
+    dot(ctx,X(e),Y(P),COL.eta);
+    label(ctx,Math.min(m.w-m.r-30,Math.max(m.l+30,X(e))),Math.min(m.h-m.b-6,Math.max(m.t+11,Y(P)+(P>0.85?16:-12))),'Pr='+P.toFixed(2),COL.eta);
+  }
+
+  // bell
+  let {ctx,w,h}=fit(document.getElementById('p2bell'),168); clear(ctx,w,h);
+  const m={l:46,r:14,t:14,b:26,w,h}; const xr=[-5,5], yr=[0,0.42];
+  const {X,Y}=axesFrame(ctx,m,xr,yr);
+  gridXY(ctx,m,X,Y,xr,yr,[-5,-2.5,0,2.5,5],[0,0.2,0.4],'Xβ','φ(Xβ)',v=>v.toFixed(1));
+  ctx.strokeStyle=COL.eta; ctx.lineWidth=2.5; ctx.beginPath();
+  for(let i=0;i<=240;i++){const xv=xr[0]+(xr[1]-xr[0])*i/240; const yv=npdf(xv);
+    const px=X(xv),py=Y(yv); i?ctx.lineTo(px,py):ctx.moveTo(px,py);} ctx.stroke();
+  vline(ctx,X(e),Y(0),Y(phi),COL.eta);
+  dot(ctx,X(e),Y(phi),COL.eta);
+  label(ctx,Math.min(w-44,Math.max(m.l+44,X(e))),Math.max(m.t+11,Y(phi)-12),'φ(Xβ)='+phi.toFixed(3),COL.eta);
+
+  // bars (signed ME)
+  ({ctx,w,h}=fit(document.getElementById('p2bars'),190)); clear(ctx,w,h);
+  const me=[null,phi*B[1],phi*B[2],phi*B[3]];
+  const span=0.42*Math.max.apply(null,B.slice(1).map(Math.abs)); // symmetric range
+  const ml=58,mr=56,mt=16,mb=24;
+  const x0=ml+(w-ml-mr)*(0-(-span))/(2*span); // zero position
+  const Xb=v=>ml+(w-ml-mr)*(v-(-span))/(2*span);
+  // zero axis
+  ctx.strokeStyle=COL.zero; ctx.lineWidth=1; ctx.beginPath();
+  ctx.moveTo(x0,mt-4); ctx.lineTo(x0,h-mb+4); ctx.stroke();
+  ctx.fillStyle=COL.muted; ctx.font='11px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('0',x0,h-mb+16);
+  ctx.fillText('−'+span.toFixed(2),Xb(-span)+12,h-mb+16);
+  ctx.fillText('+'+span.toFixed(2),Xb(span)-12,h-mb+16);
+  const bh=30, gap=(h-mt-mb-3*bh)/2;
+  for(let j=1;j<=3;j++){
+    const yTop=mt+(j-1)*(bh+gap); const v=me[j];
+    const xa=Math.min(x0,Xb(v)), xb=Math.max(x0,Xb(v));
+    ctx.fillStyle=XCOL[j]; roundRect(ctx,xa,yTop,xb-xa,bh,4); ctx.fill();
+    ctx.fillStyle=COL.ink; ctx.font='700 12px sans-serif'; ctx.textAlign='right';
+    ctx.fillText('∂P/∂X'+j, ml-8, yTop+bh/2+4);
+    ctx.fillStyle=XCOL[j]; ctx.textAlign='left'; ctx.font='700 12px sans-serif';
+    ctx.fillText((v>=0?'+':'')+v.toFixed(3), w-mr+6, yTop+bh/2+4);
+  }
+}
+
+/* ---------- Panel 3 ---------- */
+const p3={focus:1,axis:2};
+function drawP3(){
+  if(p3.axis===p3.focus){ /* allowed but note */ }
+  const f=p3.focus,k=p3.axis;
+  let {ctx,w,h}=fit(document.getElementById('p3'),260); clear(ctx,w,h);
+  const xr=[-2,2];
+  // y range from curve
+  let lo=Infinity,hi=-Infinity; const pts=[];
+  for(let i=0;i<=240;i++){
+    const xv=xr[0]+(xr[1]-xr[0])*i/240;
+    const e=B[0]+B[1]*(k===1?xv:Xs[1])+B[2]*(k===2?xv:Xs[2])+B[3]*(k===3?xv:Xs[3]);
+    const yv=npdf(e)*B[f]; pts.push([xv,yv]); lo=Math.min(lo,yv); hi=Math.max(hi,yv);
+  }
+  const pad=(hi-lo)*0.18||0.1; let yr=[lo-pad,hi+pad];
+  if(yr[0]>0)yr[0]=0; if(yr[1]<0)yr[1]=0;
+  const m={l:54,r:16,t:16,b:30,w,h}; const {X,Y}=axesFrame(ctx,m,xr,yr);
+  const yt=[yr[0],(yr[0]+yr[1])/2,yr[1]];
+  gridXY(ctx,m,X,Y,xr,yr,[-2,-1,0,1,2],yt,XLAB[k].replace('_',''),'∂P/∂X'+f,v=>v.toFixed(2));
+  // zero line if spanning
+  if(yr[0]<0&&yr[1]>0){ctx.strokeStyle=COL.zero;ctx.lineWidth=1;ctx.beginPath();
+    ctx.moveTo(m.l,Y(0));ctx.lineTo(w-m.r,Y(0));ctx.stroke();}
+  ctx.strokeStyle=XCOL[f]; ctx.lineWidth=2.6; ctx.beginPath();
+  pts.forEach(([xv,yv],i)=>{const px=X(xv),py=Y(yv);i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+  ctx.stroke();
+  // current point at Xs[k]
+  const cur=Xs[k];
+  const ec=B[0]+B[1]*(k===1?cur:Xs[1])+B[2]*(k===2?cur:Xs[2])+B[3]*(k===3?cur:Xs[3]);
+  const yc=npdf(ec)*B[f];
+  vline(ctx,X(cur),Y(yr[0]),Y(yc),XCOL[f]);
+  dot(ctx,X(cur),Y(yc),XCOL[f]);
+  const lx=Math.min(w-m.r-26,Math.max(m.l+26,X(cur)));
+  const ly=Math.min(m.h-m.b-6,Math.max(m.t+11,Y(yc)+(yc>=0?-12:18)));
+  label(ctx,lx,ly,'現在地',XCOL[f]);
+
+  // captions
+  const fl='X_'+f, kl='X_'+k;
+  document.getElementById('p3cap').innerHTML=
+    `横軸 $${kl}$、縦軸 $\\partial P/\\partial ${fl}=\\phi(X\\beta)\\,\\beta_${f}$。`+
+    (f===k?`（注目変数と横軸が同じ場合）`:`他の $X$ は固定。`);
+  const slope = (k===f)
+    ? `自分自身を動かす場合でも、$\\phi$ の山を通るので限界効果は一定でない。`
+    : `$${kl}$ を動かすと $X\\beta$ が動き、その結果 $${fl}$ の限界効果 $\\phi(X\\beta)\\,\\beta_${f}$ が変わる。係数 $\\beta_${f}$ は不変であっても効果の大きさが変わる。限界効果を評価する点（他の変数の値）によって決まることを示している。`;
+  document.getElementById('p3note').innerHTML=slope;
+  if(window.MathJax&&MathJax.typesetPromise){
+    MathJax.typesetPromise([document.getElementById('p3cap'),document.getElementById('p3note')]);
+  }
+}
+
+/* ---------- 描画ヘルパ ---------- */
+function gridXY(ctx,m,X,Y,xr,yr,xticks,yticks,xlab,ylab,fmtY){
+  fmtY=fmtY||(v=>v.toFixed(0));
+  ctx.strokeStyle=COL.grid; ctx.lineWidth=1; ctx.fillStyle=COL.muted; ctx.font='11px sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  xticks.forEach(t=>{const px=X(t); ctx.beginPath();ctx.moveTo(px,m.t);ctx.lineTo(px,m.h-m.b);ctx.stroke();
+    ctx.fillText(t,px,m.h-m.b+15);});
+  ctx.textAlign='right';
+  yticks.forEach(t=>{const py=Y(t); ctx.beginPath();ctx.moveTo(m.l,py);ctx.lineTo(m.w-m.r,py);ctx.stroke();
+    ctx.fillText(fmtY(t),m.l-6,py+4);});
+  // axis labels
+  ctx.fillStyle=COL.muted; ctx.textAlign='center';
+  ctx.fillText(xlab,(m.l+m.w-m.r)/2,m.h-3);
+  ctx.save();ctx.translate(12,(m.t+m.h-m.b)/2);ctx.rotate(-Math.PI/2);ctx.fillText(ylab,0,0);ctx.restore();
+  // frame
+  ctx.strokeStyle=COL.axis; ctx.lineWidth=1.2;
+  ctx.strokeRect(m.l,m.t,m.w-m.l-m.r,m.h-m.t-m.b);
+}
+function dot(ctx,x,y,c){ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,4.5,0,7);ctx.fill();
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,1.6,0,7);ctx.fill();}
+function vline(ctx,x,y0,y1,c){ctx.strokeStyle=c;ctx.globalAlpha=.35;ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.moveTo(x,y0);ctx.lineTo(x,y1);ctx.stroke();ctx.globalAlpha=1;}
+function label(ctx,x,y,txt,c){ctx.fillStyle=c;ctx.font='700 11px sans-serif';ctx.textAlign='center';
+  ctx.fillText(txt,x,y);}
+function roundRect(ctx,x,y,w,h,r){r=Math.min(r,Math.abs(w)/2,h/2);ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+/* ---------- 配線 ---------- */
+function bind(id,fn){const el=document.getElementById(id);el.addEventListener('input',()=>{fn(parseFloat(el.value));});}
+bind('s1x',v=>{s1.x=v;drawS1();});
+bind('s1b',v=>{s1.b=v;drawS1();});
+bind('x1',v=>{Xs[1]=v;drawP2();drawP3();});
+bind('x2',v=>{Xs[2]=v;drawP2();drawP3();});
+bind('x3',v=>{Xs[3]=v;drawP2();drawP3();});
+
+document.querySelectorAll('#focusSeg button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#focusSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); p3.focus=+b.dataset.j; styleSeg(); drawP3();}));
+document.querySelectorAll('#axisSeg button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#axisSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); p3.axis=+b.dataset.k; styleSeg(); drawP3();}));
+function styleSeg(){
+  document.querySelectorAll('#focusSeg button').forEach(b=>{b.style.background=b.classList.contains('on')?XCOL[+b.dataset.j]:'#fff';});
+  document.querySelectorAll('#axisSeg button').forEach(b=>{b.style.background=b.classList.contains('on')?COL.eta:'#fff';});
+}
+
+function redrawAll(){drawS1();drawP2();drawP3();}
+styleSeg();
+redrawAll();
+let rt; window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(redrawAll,120);});
+</script>
+</body>
+</html>
