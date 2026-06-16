@@ -21,5 +21,10 @@ location: "東京都"
 
 ### 操作変数法
 
-- [需要と供給の識別問題（インタラクティブ図解）](/teaching/2026-spring-waseda-soc-intermediate-regression-analysis/supply_demand_identification.html) — 操作変数法の導入として、需要関数と供給関数の識別問題を可視化したインタラクティブな図解です。
+- [需要と供給の識別問題（インタラクティブ図解）](/teaching/2026-spring-waseda-soc-intermediate-regression-analysis/supply_demand_identification.html) — 操作変数法における、需要関数と供給関数の識別問題を可視化したインタラクティブな図解です。
 
+
+
+### 二項従属変数モデル
+
+- [二項従属変数モデルにおける限界効果の図解](/teaching/2026-spring-waseda-soc-intermediate-regression-analysis/probit_marginal_effects.html) — 二項従属変数モデルについて、限界効果が各変数自体の係数と値だけでなく、他の変数の係数と値にも依存することを図示しているものです。
