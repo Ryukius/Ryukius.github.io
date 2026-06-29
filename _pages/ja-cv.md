@@ -32,6 +32,8 @@ author_profile: true
 学歴
 ======
 * 慶應義塾大学大学院 経済学研究科 博士（経済学）, 2026年（指導教員: [中嶋 亮](https://web.econ.keio.ac.jp/staff/nakajima/RYO_NAKAJIMA_Official_Site,_Main.html)）
+  * [博士論文(本文)](https://koara.lib.keio.ac.jp/xoonips/modules/xoonips/detail.php?koara_id=KO10002001-20256592-0003)、[要旨](https://koara.lib.keio.ac.jp/xoonips/modules/xoonips/detail.php?koara_id=KO10002001-20256592-0002)、[審査報告](https://koara.lib.keio.ac.jp/xoonips/modules/xoonips/detail.php?koara_id=KO10002001-20256592-0001)
+
 * 慶應義塾大学大学院 経済学研究科 修士（経済学）, 2020年
 * 慶應義塾大学 経済学部 学士（経済学）, 2015年
 
