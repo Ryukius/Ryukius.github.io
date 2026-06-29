@@ -30,6 +30,8 @@ author_profile: true
 
 博士（経済学）、慶應義塾大学、2026年（指導教員: [中嶋 亮](https://web.econ.keio.ac.jp/staff/nakajima/RYO_NAKAJIMA_Official_Site,_Main.html)）
 
+- [博士論文(本文)](https://koara.lib.keio.ac.jp/xoonips/modules/xoonips/detail.php?koara_id=KO10002001-20256592-0003)、[要旨](https://koara.lib.keio.ac.jp/xoonips/modules/xoonips/detail.php?koara_id=KO10002001-20256592-0002)、[審査報告](https://koara.lib.keio.ac.jp/xoonips/modules/xoonips/detail.php?koara_id=KO10002001-20256592-0001)
+
 ## 職歴
 
 * 2026年4月 - 現在、早稲田大学 商学部 講師（任期付）
