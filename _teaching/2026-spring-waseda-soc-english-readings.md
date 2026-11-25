@@ -3,7 +3,7 @@ title: "専門英語講読A 6"
 collection: teaching
 type: "学部科目"
 permalink: /teaching/2026-spring-waseda-soc-english-readings
-venue: "早稲田大学商学部"
+venue: "早稲田大学商学部(春学期）"
 date: 2026-04-01
 location: "東京都"
 ---
