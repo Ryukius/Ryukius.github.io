@@ -3,7 +3,7 @@ title: "専門英語講読B 4"
 collection: teaching
 type: "学部科目"
 permalink: /teaching/2026-fall-waseda-soc-english-readings
-venue: "早稲田大学商学部(春学期）"
+venue: "早稲田大学商学部（秋学期）"
 date: 2026-10-01
 location: "東京都"
 ---

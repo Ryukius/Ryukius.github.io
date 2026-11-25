@@ -3,7 +3,7 @@ title: "回帰分析初級 4"
 collection: teaching
 type: "学部科目"
 permalink: /teaching/2026-fall-waseda-soc-introductory-regression-analysis
-venue: "早稲田大学商学部(春学期）"
+venue: "早稲田大学商学部（秋学期）"
 date: 2026-10-01
 location: "東京都"
 ---
